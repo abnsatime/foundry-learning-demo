@@ -33,4 +33,75 @@ contract LearningTokenTest is Test {
 
         new LearningToken(INITIAL_SUPPLY);
     }
+
+    uint256 internal constant TRANSFER_AMOUNT = 100 * 10 ** 18;
+
+    address internal bob = makeAddr("bob");
+
+    function test_TransferMovesTokens() public {
+        uint256 senderBalanceBefore = token.balanceOf(address(this));
+        uint256 receiverBalanceBefore = token.balanceOf(bob);
+
+        bool success = token.transfer(bob, TRANSFER_AMOUNT);
+
+        assertTrue(success);
+
+        assertEq(token.balanceOf(bob), receiverBalanceBefore + TRANSFER_AMOUNT);
+
+        assertEq(token.balanceOf(address(this)), senderBalanceBefore - TRANSFER_AMOUNT);
+
+        assertEq(token.totalSupply(), INITIAL_SUPPLY);
+    }
+
+    function test_RevertWhenReceiverIsZeroAddress() public {
+        vm.expectRevert(abi.encodeWithSelector(LearningToken.ERC20InvalidReceiver.selector, address(0)));
+
+        token.transfer(address(0), TRANSFER_AMOUNT);
+    }
+
+    function test_RevertWhenSenderBalanceIsInsufficient() public {
+        uint256 excessiveAmount = INITIAL_SUPPLY + 1;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LearningToken.ERC20InsufficientBalance.selector, address(this), INITIAL_SUPPLY, excessiveAmount
+            )
+        );
+
+        token.transfer(bob, excessiveAmount);
+    }
+
+    function test_TransferEmitsEvent() public {
+        vm.expectEmit(true, true, false, true);
+
+        emit Transfer(address(this), bob, TRANSFER_AMOUNT);
+
+        token.transfer(bob, TRANSFER_AMOUNT);
+    }
+
+    function test_TransferZeroAmountSucceeds() public {
+        uint256 senderBalanceBefore = token.balanceOf(address(this));
+        uint256 receiverBalanceBefore = token.balanceOf(bob);
+
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(this), bob, 0);
+
+        bool success = token.transfer(bob, 0);
+
+        assertTrue(success);
+        assertEq(token.balanceOf(address(this)), senderBalanceBefore);
+
+        assertEq(token.balanceOf(bob), receiverBalanceBefore);
+    }
+
+    function test_TransferToSelfKeepBalance() public {
+        uint256 balanceBefore = token.balanceOf(address(this));
+
+        bool success = token.transfer(address(this), TRANSFER_AMOUNT);
+
+        assertTrue(success);
+        assertEq(token.balanceOf(address(this)), balanceBefore);
+
+        assertEq(token.totalSupply(), INITIAL_SUPPLY);
+    }
 }
