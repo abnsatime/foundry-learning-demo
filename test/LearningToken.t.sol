@@ -104,4 +104,41 @@ contract LearningTokenTest is Test {
 
         assertEq(token.totalSupply(), INITIAL_SUPPLY);
     }
+
+    address internal spender = makeAddr("spender");
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    function test_AllowanceDefaultsToZero() public view {
+        assertEq(token.allowance(address(this), spender), 0);
+    }
+
+    function test_ApproveSetAllowanceAndReturnsTrue() public {
+        bool success = token.approve(spender, TRANSFER_AMOUNT);
+
+        assertTrue(success);
+
+        assertEq(token.allowance(address(this), spender), TRANSFER_AMOUNT);
+    }
+
+    function test_ApproveEmitsEvent() public {
+        vm.expectEmit(true, true, false, true);
+
+        emit Approval(address(this), spender, TRANSFER_AMOUNT);
+
+        token.approve(spender, TRANSFER_AMOUNT);
+    }
+
+    function test_ApproveOverwritesExistingAllowance() public {
+        token.approve(spender, 50 * 10 ** 18);
+        token.approve(spender, TRANSFER_AMOUNT);
+
+        assertEq(token.allowance(address(this), spender), TRANSFER_AMOUNT);
+    }
+
+    function test_RevertWhenSpenderIsZeroAddress() public {
+        vm.expectRevert(abi.encodeWithSelector(LearningToken.ERC20InvalidSpender.selector, address(0)));
+
+        token.approve(address(0), TRANSFER_AMOUNT);
+    }
 }

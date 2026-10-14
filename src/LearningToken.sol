@@ -12,11 +12,17 @@ contract LearningToken {
 
     mapping(address => uint256) public balanceOf;
 
+    mapping(address => mapping(address => uint256)) public allowance;
+
     error ERC20InvalidReceiver(address receiver);
 
     error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
 
+    error ERC20InvalidSpender(address spender);
+
     event Transfer(address indexed from, address indexed to, uint256 value);
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     /// @notice Creates the initial supply and assigns it to the deployer.
     /// @param initialSupply Amount expressed in the token's smallest unit.
@@ -46,6 +52,22 @@ contract LearningToken {
         balanceOf[to] += amount;
 
         emit Transfer(msg.sender, to, amount);
+
+        return true;
+    }
+
+    /// @notice Sets the caller's allowance for a spender.
+    /// @param spender Address allowed to spend the caller's tokens.
+    /// @param amount Maximum amount the spender may use.
+    /// @return success Always true when the approval succeeds.
+    function approve(address spender, uint256 amount) external returns (bool success) {
+        if (spender == address(0)) {
+            revert ERC20InvalidSpender(address(0));
+        }
+
+        allowance[msg.sender][spender] = amount;
+
+        emit Approval(msg.sender, spender, amount);
 
         return true;
     }
