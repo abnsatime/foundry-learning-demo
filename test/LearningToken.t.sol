@@ -9,6 +9,8 @@ contract LearningTokenTest is Test {
 
     LearningToken internal token;
 
+    address internal attacker = makeAddr("attacker");
+
     function setUp() public {
         token = new LearningToken(INITIAL_SUPPLY);
     }
@@ -140,5 +142,113 @@ contract LearningTokenTest is Test {
         vm.expectRevert(abi.encodeWithSelector(LearningToken.ERC20InvalidSpender.selector, address(0)));
 
         token.approve(address(0), TRANSFER_AMOUNT);
+    }
+
+    function test_TransferFromMovesTokensAndSpendsAllowance() public {
+        token.approve(spender, TRANSFER_AMOUNT);
+
+        uint256 ownerBalanceBefore = token.balanceOf(address(this));
+        uint256 receiverBalanceBefore = token.balanceOf(bob);
+
+        vm.prank(spender);
+
+        bool success = token.transferFrom(address(this), bob, TRANSFER_AMOUNT);
+        assertTrue(success);
+
+        assertEq(token.balanceOf(address(this)), ownerBalanceBefore - TRANSFER_AMOUNT);
+        assertEq(token.balanceOf(bob), receiverBalanceBefore + TRANSFER_AMOUNT);
+        assertEq(token.allowance(address(this), spender), 0);
+
+        assertEq(token.totalSupply(), INITIAL_SUPPLY);
+    }
+
+    function test_RevertWhenTransferFromAllowanceIsInsufficient() public {
+        uint256 approvedAmount = 50 * 10 ** 18;
+        token.approve(spender, approvedAmount);
+
+        vm.prank(spender);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LearningToken.ERC20InsufficientAllowance.selector, spender, approvedAmount, TRANSFER_AMOUNT
+            )
+        );
+
+        token.transferFrom(address(this), bob, TRANSFER_AMOUNT);
+    }
+
+    function test_RevertWhenTransferFromOwnerBalanceIsInsufficient() public {
+        uint256 excessiveAmount = INITIAL_SUPPLY + 1;
+
+        token.approve(spender, excessiveAmount);
+
+        vm.prank(spender);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LearningToken.ERC20InsufficientBalance.selector, address(this), INITIAL_SUPPLY, excessiveAmount
+            )
+        );
+
+        token.transferFrom(address(this), bob, excessiveAmount);
+
+        assertEq(token.allowance(address(this), spender), excessiveAmount);
+    }
+
+    function test_RevertWhenTransferFromReceiverIsZeroAddress() public {
+        token.approve(spender, TRANSFER_AMOUNT);
+
+        vm.prank(spender);
+        vm.expectRevert(abi.encodeWithSelector(LearningToken.ERC20InvalidReceiver.selector, address(0)));
+
+        token.transferFrom(address(this), address(0), TRANSFER_AMOUNT);
+
+        assertEq(token.allowance(address(this), spender), TRANSFER_AMOUNT);
+    }
+
+    function test_TransferFromEmitsEvent() public {
+        token.approve(spender, TRANSFER_AMOUNT);
+
+        vm.expectEmit(true, true, false, true);
+
+        emit Transfer(address(this), bob, TRANSFER_AMOUNT);
+
+        vm.prank(spender);
+        token.transferFrom(address(this), bob, TRANSFER_AMOUNT);
+    }
+
+    function test_AllowanceIsScopedToSpender() public {
+        token.approve(spender, TRANSFER_AMOUNT);
+
+        vm.prank(attacker);
+        vm.expectRevert(
+            abi.encodeWithSelector(LearningToken.ERC20InsufficientAllowance.selector, attacker, 0, TRANSFER_AMOUNT)
+        );
+        token.transferFrom(address(this), bob, TRANSFER_AMOUNT);
+
+        assertEq(token.allowance(address(this), spender), TRANSFER_AMOUNT);
+    }
+
+    function test_TransferFromZeroAmountSucceeds() public {
+        uint256 ownerBalanceBefore = token.balanceOf(address(this));
+        uint256 receiverBalanceBefore = token.balanceOf(bob);
+
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(this), bob, 0);
+
+        vm.prank(spender);
+
+        bool success = token.transferFrom(address(this), bob, 0);
+
+        assertTrue(success);
+
+        assertEq(token.balanceOf(address(this)), ownerBalanceBefore);
+        assertEq(token.balanceOf(bob), receiverBalanceBefore);
+        assertEq(token.allowance(address(this), spender), 0);
+    }
+
+    function test_RevertWhenTransferFromSenderIsZeroAddress() public {
+        vm.prank(spender);
+        vm.expectRevert(abi.encodeWithSelector(LearningToken.ERC20InvalidSender.selector, address(0)));
+
+        token.transferFrom(address(0), bob, 0);
     }
 }

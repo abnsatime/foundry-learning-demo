@@ -20,6 +20,10 @@ contract LearningToken {
 
     error ERC20InvalidSpender(address spender);
 
+    error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
+
+    error ERC20InvalidSender(address sender);
+
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -38,20 +42,7 @@ contract LearningToken {
     /// @param amount Amount expressed in the token's smallest unit.
     /// @return success Always true when the transfer succeeds.
     function transfer(address to, uint256 amount) external returns (bool success) {
-        if (to == address(0)) {
-            revert ERC20InvalidReceiver(address(0));
-        }
-
-        uint256 senderBalance = balanceOf[msg.sender];
-
-        if (senderBalance < amount) {
-            revert ERC20InsufficientBalance(msg.sender, senderBalance, amount);
-        }
-
-        balanceOf[msg.sender] = senderBalance - amount;
-        balanceOf[to] += amount;
-
-        emit Transfer(msg.sender, to, amount);
+        _transfer(msg.sender, to, amount);
 
         return true;
     }
@@ -70,6 +61,45 @@ contract LearningToken {
         emit Approval(msg.sender, spender, amount);
 
         return true;
+    }
+
+    /// @notice Transfers tokens using the caller's allowance.
+    /// @param from Address whose tokens are transferred.
+    /// @param to Address receiving the tokens.
+    /// @param amount Amount expressed in the token's smallest unit.
+    /// @return success Always true when the transfer succeeds.
+    function transferFrom(address from, address to, uint256 amount) external returns (bool success) {
+        uint256 currentAllowance = allowance[from][msg.sender];
+
+        if (currentAllowance < amount) {
+            revert ERC20InsufficientAllowance(msg.sender, currentAllowance, amount);
+        }
+
+        allowance[from][msg.sender] = currentAllowance - amount;
+        _transfer(from, to, amount);
+
+        return true;
+    }
+
+    function _transfer(address from, address to, uint256 amount) internal {
+        if (to == address(0)) {
+            revert ERC20InvalidReceiver(address(0));
+        }
+
+        if (from == address(0)) {
+            revert ERC20InvalidSender(address(0));
+        }
+
+        uint256 senderBalance = balanceOf[from];
+
+        if (senderBalance < amount) {
+            revert ERC20InsufficientBalance(from, senderBalance, amount);
+        }
+
+        balanceOf[from] = senderBalance - amount;
+        balanceOf[to] += amount;
+
+        emit Transfer(from, to, amount);
     }
 }
 
