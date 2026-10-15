@@ -260,4 +260,60 @@ contract LearningTokenTest is Test {
         assertEq(tokenAsInterface.totalSupply(), INITIAL_SUPPLY);
         assertEq(tokenAsInterface.balanceOf(address(this)), INITIAL_SUPPLY);
     }
+
+    function testFuzz_TransferPreservesBalancesAndSupply(address receiver, uint256 amount) public {
+        vm.assume(receiver != address(0));
+        vm.assume(receiver != address(this));
+
+        amount = bound(amount, 0, INITIAL_SUPPLY);
+
+        uint256 senderBalanceBefore = token.balanceOf(address(this));
+        uint256 receiverBalanceBefore = token.balanceOf(receiver);
+
+        bool success = token.transfer(receiver, amount);
+
+        assertTrue(success);
+
+        assertEq(token.balanceOf(address(this)), senderBalanceBefore - amount);
+        assertEq(token.balanceOf(receiver), receiverBalanceBefore + amount);
+        assertEq(token.totalSupply(), INITIAL_SUPPLY);
+    }
+
+    function testFuzz_ApproveStoresExactAllowance(address fuzzSpender, uint256 amount) public {
+        vm.assume(fuzzSpender != address(0));
+
+        bool success = token.approve(fuzzSpender, amount);
+
+        assertTrue(success);
+
+        assertEq(token.allowance(address(this), fuzzSpender), amount);
+    }
+
+    function testFuzz_TransferFromPreservesState(
+        address fuzzSpender,
+        address receiver,
+        uint256 approvedAmount,
+        uint256 spendAmount
+    ) public {
+        vm.assume(fuzzSpender != address(0));
+        vm.assume(receiver != address(0));
+        vm.assume(receiver != address(this));
+
+        approvedAmount = bound(approvedAmount, 0, INITIAL_SUPPLY);
+        spendAmount = bound(spendAmount, 0, approvedAmount);
+
+        token.approve(fuzzSpender, approvedAmount);
+
+        uint256 ownerBalanceBefore = token.balanceOf(address(this));
+        uint256 receiverBalanceBefore = token.balanceOf(receiver);
+
+        vm.prank(fuzzSpender);
+        bool success = token.transferFrom(address(this), receiver, spendAmount);
+
+        assertTrue(success);
+        assertEq(token.balanceOf(address(this)), ownerBalanceBefore - spendAmount);
+        assertEq(token.balanceOf(receiver), receiverBalanceBefore + spendAmount);
+        assertEq(token.allowance(address(this), fuzzSpender), approvedAmount - spendAmount);
+        assertEq(token.totalSupply(), INITIAL_SUPPLY);
+    }
 }
