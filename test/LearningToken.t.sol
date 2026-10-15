@@ -4,6 +4,8 @@ pragma solidity ^0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {LearningToken} from "../src/LearningToken.sol";
 
+import {IERC20} from "../src/interfaces/IERC20.sol";
+
 contract LearningTokenTest is Test {
     uint256 internal constant INITIAL_SUPPLY = 1_000_000 * 10 ** 18;
 
@@ -250,5 +252,12 @@ contract LearningTokenTest is Test {
         vm.expectRevert(abi.encodeWithSelector(LearningToken.ERC20InvalidSender.selector, address(0)));
 
         token.transferFrom(address(0), bob, 0);
+    }
+
+    function test_ImplementsIERC20Interface() public view {
+        IERC20 tokenAsInterface = IERC20(address(token));
+
+        assertEq(tokenAsInterface.totalSupply(), INITIAL_SUPPLY);
+        assertEq(tokenAsInterface.balanceOf(address(this)), INITIAL_SUPPLY);
     }
 }

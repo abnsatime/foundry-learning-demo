@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import {IERC20} from "./interfaces/IERC20.sol";
+
 /// @title Learning Token
 /// @notice An educational token built step by step;
-contract LearningToken {
+contract LearningToken is IERC20 {
     string public constant name = "Learning Token";
     string public constant symbol = "LRN";
     uint8 public constant decimals = 18;
 
-    uint256 public totalSupply;
+    uint256 public override totalSupply;
 
-    mapping(address => uint256) public balanceOf;
+    mapping(address => uint256) public override balanceOf;
 
-    mapping(address => mapping(address => uint256)) public allowance;
+    mapping(address => mapping(address => uint256)) public override allowance;
 
     error ERC20InvalidReceiver(address receiver);
 
@@ -23,10 +25,6 @@ contract LearningToken {
     error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
 
     error ERC20InvalidSender(address sender);
-
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     /// @notice Creates the initial supply and assigns it to the deployer.
     /// @param initialSupply Amount expressed in the token's smallest unit.
@@ -41,7 +39,7 @@ contract LearningToken {
     /// @param to Address receiving the tokens.
     /// @param amount Amount expressed in the token's smallest unit.
     /// @return success Always true when the transfer succeeds.
-    function transfer(address to, uint256 amount) external returns (bool success) {
+    function transfer(address to, uint256 amount) external override returns (bool success) {
         _transfer(msg.sender, to, amount);
 
         return true;
@@ -51,7 +49,7 @@ contract LearningToken {
     /// @param spender Address allowed to spend the caller's tokens.
     /// @param amount Maximum amount the spender may use.
     /// @return success Always true when the approval succeeds.
-    function approve(address spender, uint256 amount) external returns (bool success) {
+    function approve(address spender, uint256 amount) external override returns (bool success) {
         if (spender == address(0)) {
             revert ERC20InvalidSpender(address(0));
         }
@@ -68,7 +66,7 @@ contract LearningToken {
     /// @param to Address receiving the tokens.
     /// @param amount Amount expressed in the token's smallest unit.
     /// @return success Always true when the transfer succeeds.
-    function transferFrom(address from, address to, uint256 amount) external returns (bool success) {
+    function transferFrom(address from, address to, uint256 amount) external override returns (bool success) {
         uint256 currentAllowance = allowance[from][msg.sender];
 
         if (currentAllowance < amount) {
