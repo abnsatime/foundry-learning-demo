@@ -100,4 +100,3 @@ contract LearningToken is IERC20 {
         emit Transfer(from, to, amount);
     }
 }
-
