@@ -1,0 +1,17 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "contract": "LearningToken",
+  "address": "0x3fBbEF670f4d6F58A257FE811d7Cad60D6135FD4",
+  "deployer": "0x766956dBFb9914dEDfFBc6c8bD25002aA4B6864A",
+  "transactionHash": "0xa6132227d53363dcb5ddd399e45061163ad4e2c73654628be8d2bd1a3f1fcd1e",
+  "blockNumber": 11926143,
+  "initialSupply": "1000000000000000000000000",
+  "decimals": 18,
+  "gasUsed": "5097571",
+  "effectiveGasPriceWei": "19",
+  "compilerVersion": "0.8.26",
+  "sourceCommit": "039a0cb6040b165e23dffb11fe603705b73c101b",
+  "sourceVerified": true,
+  "explorer": "https://sepolia.etherscan.io/address/0x3fBbEF670f4d6F58A257FE811d7Cad60D6135FD4"
+}
