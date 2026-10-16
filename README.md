@@ -24,8 +24,15 @@ src/
 ├── LearningToken.sol
 └── interfaces/
     └── IERC20.sol
+script/
+└── DeployLearningToken.s.sol
 test/
-└── LearningToken.t.sol
+├── LearningToken.t.sol
+└── invariant/
+    ├── LearningToken.invariant.t.sol
+    └── LearningTokenHandler.sol
+deployments/
+└── sepolia.json
 ```
 
 ## 环境要求
@@ -99,6 +106,32 @@ cast call <TOKEN_ADDRESS> \
 
 Anvil 私钥是公开测试凭据，只能用于本地开发，绝不能用于测试网或主网资产。
 
+## Sepolia 部署
+
+LearningToken 已部署并通过 Etherscan Exact Match 源码验证：
+
+| 字段 | 值 |
+|---|---|
+| Network | Sepolia |
+| Chain ID | `11155111` |
+| Contract | [`0x3fBbEF670f4d6F58A257FE811d7Cad60D6135FD4`](https://sepolia.etherscan.io/address/0x3fBbEF670f4d6F58A257FE811d7Cad60D6135FD4#code) |
+| Deployment transaction | [`0xa6132227d53363dcb5ddd399e45061163ad4e2c73654628be8d2bd1a3f1fcd1e`](https://sepolia.etherscan.io/tx/0xa6132227d53363dcb5ddd399e45061163ad4e2c73654628be8d2bd1a3f1fcd1e) |
+| Deployer | `0x766956dBFb9914dEDfFBc6c8bD25002aA4B6864A` |
+| Initial supply | `1,000,000 LRN` |
+| Compiler | Solidity `0.8.26` |
+| Source verification | Exact Match |
+
+完整的机器可读部署信息见 [`deployments/sepolia.json`](deployments/sepolia.json)。
+
+只读查询示例：
+
+```bash
+cast call \
+  0x3fBbEF670f4d6F58A257FE811d7Cad60D6135FD4 \
+  "totalSupply()(uint256)" \
+  --rpc-url https://ethereum-sepolia-rpc.publicnode.com
+```
+
 ## 学习路线
 
 1. 手写 ERC-20 核心逻辑并理解 ABI。
@@ -107,4 +140,5 @@ Anvil 私钥是公开测试凭据，只能用于本地开发，绝不能用于�
 4. 使用功能分支和 Pull Request 协作。
 5. 使用 fuzz 和 invariant 测试验证状态性质。
 6. 使用部署脚本、Anvil 和 Cast 完成本地部署。
-7. 后续加入测试网部署和 CI/CD。
+7. 部署到 Sepolia 并完成 Etherscan 源码验证。
+8. 后续加入 CI/CD。
